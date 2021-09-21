@@ -1,0 +1,38 @@
+# Now the docker-compose file is only for developing purposes
+version: '3'
+services:
+  t_campaign-db:
+    image: postgres:12.5
+    environment:
+      - POSTGRES_PASSWORD=userpass
+      - POSTGRES_USER=user
+      - POSTGRES_DB=campaign-test
+    volumes:
+      - pg_test_data:/var/lib/postgresql/data
+
+  t_campaign-service:
+    build:
+      dockerfile: Dockerfile-test
+      context: ./
+    environment:
+      - POSTGRES_PASSWORD=userpass
+      - POSTGRES_USER=user
+      - POSTGRES_DB=campaign-test
+      - POSTGRES_HOST=t_campaign-db
+    ports:
+      - 90:8080
+      - 5005:5005
+    depends_on:
+      - t_campaign-db
+
+  t_flyway:
+    image: flyway/flyway:7.3
+    depends_on:
+      - t_campaign-db
+    volumes:
+      - ./migrations:/flyway/sql
+    command: -url=jdbc:postgresql://t_campaign-db/campaign-test -user=user -password=userpass -connectRetries=60 migrate
+
+volumes:
+  pg_test_data:
+    driver: local

@@ -1,0 +1,34 @@
+# Now the docker-compose file is only for developing purposes
+version: '3'
+services:
+  d_campaign-db:
+    image: postgres:12.5
+    environment:
+      - POSTGRES_PASSWORD=userpass
+      - POSTGRES_USER=user
+      - POSTGRES_DB=campaign
+
+  d_gradle:
+    image: gradle:6.7.0-jdk11
+    volumes:
+      - ${CAMPAIGNS_PATH}:/home/gradle/src/
+    user: 1000:1000
+    expose:
+      - 8080
+    working_dir: /home/gradle/src
+    environment:
+      - POSTGRES_PASSWORD=userpass
+      - POSTGRES_USER=user
+      - POSTGRES_DB=campaign
+      - POSTGRES_HOST=d_campaign-db
+    ports:
+      - 90:8080
+    command: bash -c "gradle run --continuous --daemon"
+
+  d_flyway:
+    image: flyway/flyway:7.3
+    depends_on:
+      - d_campaign-db
+    volumes:
+      - ./migrations:/flyway/sql
+    command: -url=jdbc:postgresql://d_campaign-db/campaign -user=user -password=userpass -connectRetries=60 migrate
