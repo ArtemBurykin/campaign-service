@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign
+package ru.avesystems.maise.campaign.codec
 
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageCodec

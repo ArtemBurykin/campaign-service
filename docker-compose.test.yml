@@ -19,6 +19,9 @@ services:
       - POSTGRES_USER=user
       - POSTGRES_DB=campaign-test
       - POSTGRES_HOST=t_campaign-db
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_HOST=t_amqp
     ports:
       - 90:8080
       - 5005:5005
@@ -32,6 +35,17 @@ services:
     volumes:
       - ./migrations:/flyway/sql
     command: -url=jdbc:postgresql://t_campaign-db/campaign-test -user=user -password=userpass -connectRetries=60 migrate
+
+  t_amqp:
+    image: rabbitmq:3.9-management
+    expose:
+      - 5672
+    ports:
+      - 5670:5672
+      - ${RABBITMQ_PORT}:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 
 volumes:
   pg_test_data:

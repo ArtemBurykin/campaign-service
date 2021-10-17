@@ -18,11 +18,11 @@ class CampaignCreatedEvent(
         override fun fromJson(obj: JsonObject, createdAt: LocalDateTime): CampaignCreatedEvent {
             val id = UUID.fromString(obj.getString("id"))
             val title = obj.getString("title")
-            val templateTypeId = UUID.fromString(obj.getString("templateTypeId"))
-            val templateConfig = obj.getJsonObject("typeConfig")
+            val templateTypeId = UUID.fromString(obj.getString("templateId"))
+            val templateConfig = obj.getJsonObject("templateConfig")
             val templateMap = templateConfig.map
 
-            val recipientListData = obj.getJsonObject("recipientsList")
+            val recipientListData = obj.getJsonObject("recipients")
 
             val recipientList = mutableMapOf<UUID, Map<String, Any>>()
             recipientListData.forEach { (recipientId: String, configObj: Any) ->
@@ -56,13 +56,13 @@ class CampaignCreatedEvent(
 
         json.put("id", id.toString())
         json.put("title", title)
-        json.put("templateTypeId", templateTypeId.toString())
+        json.put("templateId", templateTypeId.toString())
 
         val typeConfig = JsonObject()
         templateTypeConfig.forEach { (key, value) ->
             typeConfig.put(key, value)
         }
-        json.put("typeConfig", typeConfig)
+        json.put("templateConfig", typeConfig)
 
         val recipientsListData = JsonObject()
         recipientLists.forEach { (recipientId, config) ->
@@ -70,7 +70,7 @@ class CampaignCreatedEvent(
             config.forEach { (key, value) -> configData.put(key, value) }
             recipientsListData.put(recipientId.toString(), configData)
         }
-        json.put("recipientsList", recipientsListData)
+        json.put("recipients", recipientsListData)
 
         return json
     }

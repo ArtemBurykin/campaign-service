@@ -41,6 +41,8 @@ class EventStoreVerticle: AbstractVerticle() {
                     campaign.apply(it)
                 }
 
+                // IMHERE
+                // TODO: move deserialization to the get item handler
                 val campaignData = JsonObject()
                 campaignData.put("id", campaign.id.toString())
                 campaignData.put("title", campaign.title)

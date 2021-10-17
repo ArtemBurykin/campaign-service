@@ -11,6 +11,9 @@ import io.vertx.reactivex.core.RxHelper
 import io.vertx.reactivex.ext.web.Router
 import io.vertx.reactivex.ext.web.RoutingContext
 import io.vertx.reactivex.ext.web.handler.BodyHandler
+import ru.avesystems.maise.campaign.codec.CampaignListItemsCodec
+import ru.avesystems.maise.campaign.codec.CampaignItemsHolder
+import ru.avesystems.maise.campaign.codec.GenericCodec
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import ru.avesystems.maise.campaign.handlers.CreateCampaignHandler
 import ru.avesystems.maise.campaign.handlers.GetAllCampaignsHandler
@@ -47,8 +50,13 @@ class MainVerticle : AbstractVerticle() {
         val readVrt = ReadVerticle()
         val readVrtDeployment = RxHelper.deployVerticle(vertx, readVrt, options)
 
+        val asyncMsgVrt = AsyncMessageVerticle()
+        val asyncVrtDeployment = RxHelper.deployVerticle(vertx, asyncMsgVrt, options)
+
         val eventStoreVrt = EventStoreVerticle()
-        val verticlesDeployment = readVrtDeployment.mergeWith(RxHelper.deployVerticle(vertx, eventStoreVrt, options))
+        val eventStoreDeployment = RxHelper.deployVerticle(vertx, eventStoreVrt, options)
+
+        val verticlesDeployment = readVrtDeployment.mergeWith(eventStoreDeployment).mergeWith(asyncVrtDeployment)
 
         registerObjectCodecs()
 
@@ -79,6 +87,10 @@ class MainVerticle : AbstractVerticle() {
 
         vertx.eventBus().delegate.registerDefaultCodec(
             CampaignCreatedEvent::class.java, GenericCodec(CampaignCreatedEvent::class.java)
+        )
+
+        vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignItemsHolder::class.java, CampaignListItemsCodec()
         )
     }
 

@@ -21,6 +21,9 @@ services:
       - POSTGRES_USER=user
       - POSTGRES_DB=campaign
       - POSTGRES_HOST=d_campaign-db
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_HOST=d_amqp
     ports:
       - 90:8080
     command: bash -c "gradle run --continuous --daemon"
@@ -32,3 +35,13 @@ services:
     volumes:
       - ./migrations:/flyway/sql
     command: -url=jdbc:postgresql://d_campaign-db/campaign -user=user -password=userpass -connectRetries=60 migrate
+
+  d_amqp:
+    image: rabbitmq:3.9-management
+    expose:
+      - 5672
+    ports:
+      - ${RABBITMQ_PORT}:15672
+    environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest

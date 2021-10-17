@@ -2,8 +2,8 @@ package ru.avesystems.maise.campaign
 
 import io.reactivex.Completable
 import io.reactivex.Single
-import io.vertx.core.json.Json
 import io.vertx.reactivex.core.AbstractVerticle
+import ru.avesystems.maise.campaign.codec.CampaignItemsHolder
 import ru.avesystems.maise.campaign.db.CampaignReadRepository
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import java.util.*
@@ -25,7 +25,8 @@ class ReadVerticle : AbstractVerticle() {
 
         eventBus.consumer<Any>("campaigns.read.getAll") { message ->
             getAllCampaigns().subscribe { campaigns ->
-               message.reply(Json.encodePrettily(campaigns))
+                val holder = CampaignItemsHolder(campaigns)
+                message.reply(holder)
             }
         }
 
