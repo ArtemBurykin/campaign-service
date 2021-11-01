@@ -6,6 +6,7 @@ import io.vertx.reactivex.core.AbstractVerticle
 import ru.avesystems.maise.campaign.codec.CampaignItemsHolder
 import ru.avesystems.maise.campaign.db.CampaignReadRepository
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
+import ru.avesystems.maise.campaign.model.CampaignListItem
 import java.util.*
 
 /**

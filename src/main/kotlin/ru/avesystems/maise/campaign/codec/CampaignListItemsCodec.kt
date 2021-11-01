@@ -13,7 +13,7 @@ class CampaignListItemsCodec : MessageCodec<CampaignItemsHolder, CampaignItemsHo
     }
 
     override fun name(): String {
-        return "CampaignListItemsCoded"
+        return "CampaignListItemsCodec"
     }
 
     override fun systemCodecID(): Byte {

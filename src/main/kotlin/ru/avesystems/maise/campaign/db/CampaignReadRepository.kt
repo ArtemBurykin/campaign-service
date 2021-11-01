@@ -7,7 +7,7 @@ import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.pgclient.PgPool
 import io.vertx.reactivex.sqlclient.Tuple
 import io.vertx.sqlclient.PoolOptions
-import ru.avesystems.maise.campaign.CampaignListItem
+import ru.avesystems.maise.campaign.model.CampaignListItem
 
 /**
  * The abstraction to reduce the code connected with the DB. The low level interface to operate with

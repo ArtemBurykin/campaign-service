@@ -1,7 +1,6 @@
 package ru.avesystems.maise.campaign.domain.events
 
 import io.vertx.core.json.JsonObject
-import ru.avesystems.maise.campaign.domain.Config
 import java.time.LocalDateTime
 import java.util.*
 
@@ -10,7 +9,7 @@ class CampaignCreatedEvent(
     val title: String,
     val templateTypeId: UUID,
     val templateTypeConfig: Map<String, Any>,
-    val recipientLists: Map<UUID, Config>,
+    val recipientLists: Map<UUID, Map<String, Any>>,
     createdAt: LocalDateTime
 ) : AbstractDomainEvent(id, createdAt) {
 

@@ -5,12 +5,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
 
-typealias Config = Map<String, Any>
-
-enum class CampaignState {
-    Initial, Sending, Paused, Stopped
-}
-
 /**
  * The mailing campaign. The aggregate to control the process of a mailing.
  */
@@ -22,7 +16,7 @@ class Campaign() {
      * A map with ids of recipient lists (another aggregate) and a config for each of them.
      * The config may contain something like templates that can be substituted during a mailing.
      */
-    lateinit var recipientLists: Map<UUID, Config>; private set
+    lateinit var recipientLists: Map<UUID, Map<String, Any>>; private set
 
     /**
      * The config to configure a template type in order to make it more specific.

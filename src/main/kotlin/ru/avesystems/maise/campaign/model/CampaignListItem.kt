@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign
+package ru.avesystems.maise.campaign.model
 
 import java.util.*
 

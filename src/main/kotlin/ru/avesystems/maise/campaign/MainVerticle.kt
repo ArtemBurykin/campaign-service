@@ -18,6 +18,8 @@ import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import ru.avesystems.maise.campaign.handlers.CreateCampaignHandler
 import ru.avesystems.maise.campaign.handlers.GetAllCampaignsHandler
 import ru.avesystems.maise.campaign.handlers.GetCampaignByIdHandler
+import ru.avesystems.maise.campaign.model.CampaignItem
+import ru.avesystems.maise.campaign.model.CampaignListItem
 
 /**
  * The main verticle to launch the app. The bootstrap is located here.
@@ -91,6 +93,10 @@ class MainVerticle : AbstractVerticle() {
 
         vertx.eventBus().delegate.registerDefaultCodec(
             CampaignItemsHolder::class.java, CampaignListItemsCodec()
+        )
+
+        vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignItem::class.java, GenericCodec(CampaignItem::class.java)
         )
     }
 

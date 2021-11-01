@@ -1,11 +1,11 @@
 package ru.avesystems.maise.campaign
 
 import io.reactivex.Completable
-import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.core.AbstractVerticle
 import ru.avesystems.maise.campaign.db.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
+import ru.avesystems.maise.campaign.model.CampaignItem
 import java.util.*
 
 /**
@@ -41,32 +41,14 @@ class EventStoreVerticle: AbstractVerticle() {
                     campaign.apply(it)
                 }
 
-                // IMHERE
-                // TODO: move deserialization to the get item handler
-                val campaignData = JsonObject()
-                campaignData.put("id", campaign.id.toString())
-                campaignData.put("title", campaign.title)
-                campaignData.put("templateId", campaign.templateTypeId.toString())
-
-                val configData = JsonObject()
-                campaign.templateTypeConfig.forEach { (key, value) ->
-                    configData.put(key, value)
-                }
-
-                campaignData.put("templateConfig", campaign.templateTypeConfig)
-
-                val recipientsListData = JsonObject()
-                campaign.recipientLists.forEach { (recipientId, config) ->
-                    val recipientConfData = JsonObject()
-                    config.forEach { (key, value) ->
-                        recipientConfData.put(key, value)
-                    }
-
-                    recipientsListData.put(recipientId.toString(), recipientConfData)
-                }
-
-                campaignData.put("recipients", recipientsListData)
-                campaignData.put("state", campaign.state)
+                val campaignData = CampaignItem(
+                    campaign.id,
+                    campaign.title,
+                    campaign.templateTypeId,
+                    campaign.templateTypeConfig,
+                    campaign.state,
+                    campaign.recipientLists
+                )
 
                 message.reply(campaignData)
             }
