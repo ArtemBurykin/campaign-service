@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign
+package ru.avesystems.maise.campaign.verticles
 
 import io.reactivex.Completable
 import io.vertx.config.ConfigRetrieverOptions
@@ -11,15 +11,15 @@ import io.vertx.reactivex.core.RxHelper
 import io.vertx.reactivex.ext.web.Router
 import io.vertx.reactivex.ext.web.RoutingContext
 import io.vertx.reactivex.ext.web.handler.BodyHandler
-import ru.avesystems.maise.campaign.codec.CampaignListItemsCodec
-import ru.avesystems.maise.campaign.codec.CampaignItemsHolder
-import ru.avesystems.maise.campaign.codec.GenericCodec
+import ru.avesystems.maise.campaign.codecs.CampaignListItemsCodec
+import ru.avesystems.maise.campaign.codecs.CampaignItemsHolder
+import ru.avesystems.maise.campaign.codecs.GenericCodec
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import ru.avesystems.maise.campaign.handlers.CreateCampaignHandler
 import ru.avesystems.maise.campaign.handlers.GetAllCampaignsHandler
 import ru.avesystems.maise.campaign.handlers.GetCampaignByIdHandler
-import ru.avesystems.maise.campaign.model.CampaignItem
-import ru.avesystems.maise.campaign.model.CampaignListItem
+import ru.avesystems.maise.campaign.models.CampaignItem
+import ru.avesystems.maise.campaign.models.CampaignListItem
 
 /**
  * The main verticle to launch the app. The bootstrap is located here.

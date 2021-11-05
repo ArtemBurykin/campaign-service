@@ -3,7 +3,7 @@ package ru.avesystems.maise.campaign.handlers
 import io.vertx.core.json.Json
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
-import ru.avesystems.maise.campaign.codec.CampaignItemsHolder
+import ru.avesystems.maise.campaign.codecs.CampaignItemsHolder
 
 /**
  * The request handler to get all campaigns from the DB.

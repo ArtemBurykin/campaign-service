@@ -1,6 +1,6 @@
-package ru.avesystems.maise.campaign.codec
+package ru.avesystems.maise.campaign.codecs
 
-import ru.avesystems.maise.campaign.model.CampaignListItem
+import ru.avesystems.maise.campaign.models.CampaignListItem
 
 class CampaignItemsHolder(var data: List<CampaignListItem>) {
     override fun toString(): String {

@@ -1,13 +1,13 @@
-package ru.avesystems.maise.campaign
+package ru.avesystems.maise.campaign.verticles
 
 import io.reactivex.Completable
 import io.reactivex.Single
 import io.vertx.reactivex.core.AbstractVerticle
 import io.vertx.reactivex.core.eventbus.Message
-import ru.avesystems.maise.campaign.db.EventStoreCampaignRepository
+import ru.avesystems.maise.campaign.repositories.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
-import ru.avesystems.maise.campaign.model.CampaignItem
+import ru.avesystems.maise.campaign.models.CampaignItem
 import java.util.*
 
 /**

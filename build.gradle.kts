@@ -21,7 +21,7 @@ val kotlinVersion = "1.3.72"
 val vertxVersion = "3.9.1"
 val junitJupiterVersion = "5.6.0"
 
-val mainVerticleName = "$group.campaign.MainVerticle"
+val mainVerticleName = "$group.campaign.verticles.MainVerticle"
 val watchForChange = "src/**/*"
 val doOnChange = "./gradlew classes"
 val launcherClassName = "io.vertx.core.Launcher"

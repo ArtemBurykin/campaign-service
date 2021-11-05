@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign.db
+package ru.avesystems.maise.campaign.repositories
 
 import io.reactivex.Completable
 import io.reactivex.Single
@@ -7,7 +7,7 @@ import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.pgclient.PgPool
 import io.vertx.reactivex.sqlclient.Tuple
 import io.vertx.sqlclient.PoolOptions
-import ru.avesystems.maise.campaign.model.CampaignListItem
+import ru.avesystems.maise.campaign.models.CampaignListItem
 
 /**
  * The abstraction to reduce the code connected with the DB. The low level interface to operate with

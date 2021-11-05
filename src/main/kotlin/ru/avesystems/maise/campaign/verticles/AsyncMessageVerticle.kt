@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign
+package ru.avesystems.maise.campaign.verticles
 
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.ConnectionFactory

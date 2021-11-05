@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign.db
+package ru.avesystems.maise.campaign.repositories
 
 import io.reactivex.Completable
 import io.reactivex.Single

@@ -1,4 +1,4 @@
-package ru.avesystems.maise.campaign.model
+package ru.avesystems.maise.campaign.models
 
 import ru.avesystems.maise.campaign.domain.CampaignState
 import java.util.*
