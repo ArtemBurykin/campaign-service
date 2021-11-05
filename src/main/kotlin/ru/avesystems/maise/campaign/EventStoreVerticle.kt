@@ -1,7 +1,9 @@
 package ru.avesystems.maise.campaign
 
 import io.reactivex.Completable
+import io.reactivex.Single
 import io.vertx.reactivex.core.AbstractVerticle
+import io.vertx.reactivex.core.eventbus.Message
 import ru.avesystems.maise.campaign.db.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
@@ -23,37 +25,52 @@ class EventStoreVerticle: AbstractVerticle() {
         val dbHost = config().getString("POSTGRES_HOST")
         eventStoreCampaignRepository = EventStoreCampaignRepository(vertx, dbName, dbUser, dbPwd, dbHost)
 
-        eventBus.consumer<Any>("campaigns.events.occur") { message ->
-            val event = message.body()
-
-            if (event is AbstractDomainEvent) {
-               eventStoreCampaignRepository.writeEvent(event).subscribe()
-            }
-        }
+        eventBus.consumer<Any>("campaigns.events.occur") { writeEventMessage(it) }
 
         eventBus.consumer<Any>("campaigns.restoreById") { message ->
             val id = message.body().toString()
             val uuid = UUID.fromString(id)
 
-            eventStoreCampaignRepository.findAllEvents(uuid).subscribe { events ->
-                val campaign = Campaign()
-                events.forEach {
-                    campaign.apply(it)
-                }
-
-                val campaignData = CampaignItem(
-                    campaign.id,
-                    campaign.title,
-                    campaign.templateTypeId,
-                    campaign.templateTypeConfig,
-                    campaign.state,
-                    campaign.recipientLists
-                )
-
-                message.reply(campaignData)
+            restoreCampaignById(uuid).subscribe { campaign ->
+                message.reply(campaign)
             }
         }
 
         return Completable.complete()
+    }
+
+    /**
+     * Writes data from the message to the event store.
+     */
+    private fun writeEventMessage(message: Message<Any>) {
+        val event = message.body()
+
+        if (event is AbstractDomainEvent) {
+            eventStoreCampaignRepository.writeEvent(event).subscribe()
+        }
+    }
+
+    /**
+     * Restores a campaign from the events received from the event store, and creates a data object with its data.
+     */
+    private fun restoreCampaignById(id: UUID): Single<CampaignItem> {
+        return eventStoreCampaignRepository.findAllEvents(id).flatMap { events ->
+            val campaign = Campaign()
+            events.forEach {
+                campaign.apply(it)
+            }
+
+            val campaignData = CampaignItem(
+                campaign.id,
+                campaign.title,
+                campaign.templateTypeId,
+                campaign.templateTypeConfig,
+                campaign.state,
+                campaign.recipientLists
+            )
+
+            val campaignDataSingle = Single.just(campaignData)
+            campaignDataSingle
+        }
     }
 }
