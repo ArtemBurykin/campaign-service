@@ -4,10 +4,10 @@ import io.reactivex.Completable
 import io.reactivex.Single
 import io.vertx.reactivex.core.AbstractVerticle
 import io.vertx.reactivex.core.eventbus.Message
+import ru.avesystems.maise.campaign.codecs.OptionalCampaign
 import ru.avesystems.maise.campaign.repositories.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
-import ru.avesystems.maise.campaign.models.CampaignItem
 import java.util.*
 
 /**
@@ -32,7 +32,11 @@ class EventStoreVerticle: AbstractVerticle() {
             val uuid = UUID.fromString(id)
 
             restoreCampaignById(uuid).subscribe { campaign ->
-                message.reply(campaign)
+                if (campaign.isEmpty) {
+                    message.reply(OptionalCampaign(null))
+                } else {
+                    message.reply(OptionalCampaign(campaign.get()))
+                }
             }
         }
 
@@ -53,23 +57,18 @@ class EventStoreVerticle: AbstractVerticle() {
     /**
      * Restores a campaign from the events received from the event store, and creates a data object with its data.
      */
-    private fun restoreCampaignById(id: UUID): Single<CampaignItem> {
+    private fun restoreCampaignById(id: UUID): Single<Optional<Campaign>> {
         return eventStoreCampaignRepository.findAllEvents(id).flatMap { events ->
+            if (events.count() == 0) {
+                return@flatMap Single.just(Optional.empty<Campaign>())
+            }
+
             val campaign = Campaign()
             events.forEach {
                 campaign.apply(it)
             }
 
-            val campaignData = CampaignItem(
-                campaign.id,
-                campaign.title,
-                campaign.templateTypeId,
-                campaign.templateTypeConfig,
-                campaign.state,
-                campaign.recipientLists
-            )
-
-            val campaignDataSingle = Single.just(campaignData)
+            val campaignDataSingle = Single.just(Optional.of(campaign))
             campaignDataSingle
         }
     }

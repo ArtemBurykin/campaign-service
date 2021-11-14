@@ -10,6 +10,7 @@ import io.vertx.reactivex.sqlclient.Tuple
 import io.vertx.sqlclient.PoolOptions
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
+import ru.avesystems.maise.campaign.domain.events.CampaignStartedEvent
 import java.util.*
 
 /**
@@ -49,10 +50,22 @@ class EventStoreCampaignRepository(
 
         return result.map { list ->
              list.map { row ->
-                val eventData = JsonObject(row.getString("event_data"))
-                val createdAt = row.getLocalDateTime("stamp")
+                 val eventData = JsonObject(row.getString("event_data"))
+                 val createdAt = row.getLocalDateTime("stamp")
 
-                CampaignCreatedEvent.fromJson(eventData, createdAt)
+                 val event = when (row.getString("event_type")) {
+                     CampaignCreatedEvent.getType() -> {
+                         CampaignCreatedEvent.fromJson(eventData, createdAt)
+                     }
+                     CampaignStartedEvent.getType() -> {
+                         CampaignStartedEvent.fromJson(eventData, createdAt)
+                     }
+                     else -> {
+                         throw Exception("Unknown type of the event")
+                     }
+                 }
+
+                 event
             }
         }
     }

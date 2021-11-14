@@ -3,7 +3,8 @@ package ru.avesystems.maise.campaign.handlers
 import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
-import ru.avesystems.maise.campaign.models.CampaignItem
+import ru.avesystems.maise.campaign.codecs.OptionalCampaign
+import ru.avesystems.maise.campaign.models.ErrorResponse
 
 /**
  * The handler to get a campaign item from the DB.
@@ -16,22 +17,34 @@ class GetCampaignByIdHandler {
                 val eventBus = vertx.eventBus()
 
                 eventBus.rxRequest<Any>("campaigns.restoreById", id).subscribe { result ->
-                    val campaignReadModel = result.body() as CampaignItem
+                    val campaignHolder = result.body() as OptionalCampaign
+                    val campaign = campaignHolder.campaign
+
+                    if (campaign == null) {
+                        val error = ErrorResponse("The campaign is not found")
+
+                        context.response()
+                            .putHeader("content-type", "application/json")
+                            .setStatusCode(404).end(error.toJson().toString())
+
+                        return@subscribe
+                    }
+
                     val campaignData = JsonObject()
 
-                    campaignData.put("id", campaignReadModel.id.toString())
-                    campaignData.put("title", campaignReadModel.title)
-                    campaignData.put("templateId", campaignReadModel.templateId.toString())
+                    campaignData.put("id", campaign.id.toString())
+                    campaignData.put("title", campaign.title)
+                    campaignData.put("templateId", campaign.templateTypeId.toString())
 
                     val configData = JsonObject()
-                    campaignReadModel.templateConfig.forEach { (key, value) ->
+                    campaign.templateTypeConfig.forEach { (key, value) ->
                         configData.put(key, value)
                     }
 
                     campaignData.put("templateConfig", configData)
 
                     val recipientsListData = JsonObject()
-                    campaignReadModel.recipients.forEach { (recipientId, config) ->
+                    campaign.recipientLists.forEach { (recipientId, config) ->
                         val recipientConfData = JsonObject()
                         config.forEach { (key, value) ->
                             recipientConfData.put(key, value)
@@ -41,7 +54,7 @@ class GetCampaignByIdHandler {
                     }
 
                     campaignData.put("recipients", recipientsListData)
-                    campaignData.put("state", campaignReadModel.state)
+                    campaignData.put("state", campaign.state)
 
                     context.response()
                         .putHeader("content-type", "application/json")

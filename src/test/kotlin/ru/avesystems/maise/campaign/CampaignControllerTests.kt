@@ -14,14 +14,15 @@ import java.util.*
 import com.rabbitmq.client.DeliverCallback
 import com.rabbitmq.client.Delivery
 import io.reactivex.subjects.AsyncSubject
+import org.hamcrest.CoreMatchers.equalTo
 import org.skyscreamer.jsonassert.JSONAssert
 
 class CampaignControllerTests {
 
+    private val resourceUrl = "http://0.0.0.0:90/campaigns"
+
     @Test
     fun createAndGetCampaignFromList() {
-        val baseUrl = "http://0.0.0.0:90"
-
         val templateTypeId = UUID.randomUUID().toString()
 
         val typeConfig = JSONObject()
@@ -45,19 +46,17 @@ class CampaignControllerTests {
         val response = Given {
             request().header("ContentType", "application/json").and().body(createJson)
         } When {
-            post("$baseUrl/campaigns")
+            post(resourceUrl)
         } Then {
             statusCode(201)
         }
 
         val createdId = response.extract().body().jsonPath().getString("id")
 
-        val collectionUrl = "http://0.0.0.0:90/campaigns"
-
         val getResponse = Given {
             request()
         } When {
-            get(collectionUrl)
+            get(resourceUrl)
         } Then {
             statusCode(200)
         }
@@ -73,8 +72,6 @@ class CampaignControllerTests {
 
     @Test
     fun createAndGetCampaignItem() {
-        val baseUrl = "http://0.0.0.0:90"
-
         val templateTypeId = UUID.randomUUID().toString()
 
         val templateConfig = JSONObject()
@@ -99,14 +96,14 @@ class CampaignControllerTests {
         val response = Given {
             request().header("ContentType", "application/json").and().body(createJson)
         } When {
-            post("$baseUrl/campaigns")
+            post(resourceUrl)
         } Then {
             statusCode(201)
         }
 
         val createdId = response.extract().body().jsonPath().getString("id")
 
-        val itemUrl = "http://0.0.0.0:90/campaigns/$createdId"
+        val itemUrl = "$resourceUrl/$createdId"
 
         val getResponse = Given {
             request()
@@ -116,30 +113,28 @@ class CampaignControllerTests {
             statusCode(200)
         }
 
-        val campaignsResponse = getResponse.extract().jsonPath()
+        val campaignResponse = getResponse.extract().jsonPath()
 
-        val foundCampaignTitle = campaignsResponse.getString("title")
+        val foundCampaignTitle = campaignResponse.getString("title")
         assertEquals(campaignTitle, foundCampaignTitle)
 
-        val foundTemplateTypeId = campaignsResponse.getString("templateId")
+        val foundTemplateTypeId = campaignResponse.getString("templateId")
         assertEquals(templateTypeId, foundTemplateTypeId)
 
-        val foundConfig = campaignsResponse.getJsonObject<Map<String, Any>>("templateConfig")
+        val foundConfig = campaignResponse.getJsonObject<Map<String, Any>>("templateConfig")
         val expectedConfig = mapOf("prop" to "Text")
         assertEquals(expectedConfig, foundConfig)
 
-        val foundRecipientList = campaignsResponse.getJsonObject<Map<String, Map<String, Any>>>("recipients")
+        val foundRecipientList = campaignResponse.getJsonObject<Map<String, Map<String, Any>>>("recipients")
         val expectedRecipientList = mapOf(recipientId to mapOf("option" to "test"))
         assertEquals(expectedRecipientList, foundRecipientList)
 
-        val state = campaignsResponse.get<String>("state")
+        val state = campaignResponse.get<String>("state")
         assertEquals(CampaignState.Initial.toString(), state)
     }
 
     @Test
     fun createAndCheckThatEventSent() {
-        val baseUrl = "http://0.0.0.0:90"
-
         val templateTypeId = UUID.randomUUID().toString()
 
         val templateConfig = JSONObject()
@@ -169,7 +164,7 @@ class CampaignControllerTests {
         val response = Given {
             request().header("ContentType", "application/json").and().body(createJson)
         } When {
-            post("$baseUrl/campaigns")
+            post(resourceUrl)
         } Then {
             statusCode(201)
         }
@@ -201,5 +196,141 @@ class CampaignControllerTests {
 
         val messageObj = JSONObject(messageSbj.value)
         JSONAssert.assertEquals(event, messageObj, false)
+    }
+
+    @Test
+    fun createAndStartCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun startingCampaignTwice() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val itemResponse1 = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val request1Data = itemResponse1.extract().jsonPath()
+
+        val state1 = request1Data.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state1)
+
+        // Make the second request in order to try request's idempotency
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemResponse2 = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val response2Data = itemResponse2.extract().jsonPath()
+
+        val state2 = response2Data.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state2)
+    }
+
+    /**
+     * Creates a campaign and returns the id of the campaign.
+     */
+    private fun createBasicCampaign(): String {
+        val templateTypeId = UUID.randomUUID().toString()
+        val templateConfig = JSONObject()
+        val recipientList = JSONObject()
+
+        val jsonBody = JSONObject()
+        val campaignTitle = "Test"
+        jsonBody.put("title", campaignTitle)
+        jsonBody.put("templateId", templateTypeId)
+        jsonBody.put("templateConfig", templateConfig)
+        jsonBody.put("recipients", recipientList)
+
+        val createJson = jsonBody.toString(2)
+
+        val response = Given {
+            request().header("ContentType", "application/json").and().body(createJson)
+        } When {
+            post(resourceUrl)
+        } Then {
+            statusCode(201)
+        }
+
+        return response.extract().body().jsonPath().getString("id")
+    }
+
+    @Test
+    fun startingNonExistentCampaign() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$nonExistentId/start")
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun getNonExistentCampaignItem() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        val itemUrl = "$resourceUrl/$nonExistentId"
+
+        Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(404)
+            body("error", equalTo("The campaign is not found"))
+        }
     }
 }

@@ -11,14 +11,13 @@ import io.vertx.reactivex.core.RxHelper
 import io.vertx.reactivex.ext.web.Router
 import io.vertx.reactivex.ext.web.RoutingContext
 import io.vertx.reactivex.ext.web.handler.BodyHandler
-import ru.avesystems.maise.campaign.codecs.CampaignListItemsCodec
-import ru.avesystems.maise.campaign.codecs.CampaignItemsHolder
-import ru.avesystems.maise.campaign.codecs.GenericCodec
+import ru.avesystems.maise.campaign.codecs.*
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
+import ru.avesystems.maise.campaign.domain.events.CampaignStartedEvent
 import ru.avesystems.maise.campaign.handlers.CreateCampaignHandler
 import ru.avesystems.maise.campaign.handlers.GetAllCampaignsHandler
 import ru.avesystems.maise.campaign.handlers.GetCampaignByIdHandler
-import ru.avesystems.maise.campaign.models.CampaignItem
+import ru.avesystems.maise.campaign.handlers.StartCampaignHandler
 import ru.avesystems.maise.campaign.models.CampaignListItem
 
 /**
@@ -92,11 +91,15 @@ class MainVerticle : AbstractVerticle() {
         )
 
         vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignStartedEvent::class.java, GenericCodec(CampaignStartedEvent::class.java)
+        )
+
+        vertx.eventBus().delegate.registerDefaultCodec(
             CampaignItemsHolder::class.java, CampaignListItemsCodec()
         )
 
         vertx.eventBus().delegate.registerDefaultCodec(
-            CampaignItem::class.java, GenericCodec(CampaignItem::class.java)
+            OptionalCampaign::class.java, OptionalCampaignCodec()
         )
     }
 
@@ -106,6 +109,8 @@ class MainVerticle : AbstractVerticle() {
     private fun registerRequestHandlers(router: Router) {
         router.get("/campaigns").handler(GetAllCampaignsHandler.getAllCampaignsClient(vertx))
         router.get("/campaigns/:id").handler(GetCampaignByIdHandler.getCampaignClient(vertx))
+
+        router.put("/campaigns/:id/start").handler(StartCampaignHandler.getClient(vertx))
 
         router.post("/campaigns")
             .handler(BodyHandler.create())

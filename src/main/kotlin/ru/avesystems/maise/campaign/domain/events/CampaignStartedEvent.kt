@@ -6,11 +6,13 @@ import java.util.*
 
 class CampaignStartedEvent(id: UUID, createdAt: LocalDateTime) : AbstractDomainEvent(id, createdAt) {
     override fun toJson(): JsonObject {
-        TODO("Not yet implemented")
+        val json = JsonObject()
+        json.put("id", id.toString())
+
+        return json
     }
 
-    override val type: String
-        get() = TODO("Not yet implemented")
+    override val type = getType()
 
     companion object : EventCreator<CampaignStartedEvent>() {
         override fun fromJson(obj: JsonObject, createdAt: LocalDateTime): CampaignStartedEvent {
@@ -20,7 +22,7 @@ class CampaignStartedEvent(id: UUID, createdAt: LocalDateTime) : AbstractDomainE
         }
 
         override fun getType(): String {
-            TODO("Not yet implemented")
+            return "CampaignStartedEvent"
         }
     }
 }

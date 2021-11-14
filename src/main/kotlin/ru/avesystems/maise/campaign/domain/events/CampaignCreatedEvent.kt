@@ -12,6 +12,31 @@ class CampaignCreatedEvent(
     val recipientLists: Map<UUID, Map<String, Any>>,
     createdAt: LocalDateTime
 ) : AbstractDomainEvent(id, createdAt) {
+    override fun toJson(): JsonObject {
+        val json = JsonObject()
+
+        json.put("id", id.toString())
+        json.put("title", title)
+        json.put("templateId", templateTypeId.toString())
+
+        val typeConfig = JsonObject()
+        templateTypeConfig.forEach { (key, value) ->
+            typeConfig.put(key, value)
+        }
+        json.put("templateConfig", typeConfig)
+
+        val recipientsListData = JsonObject()
+        recipientLists.forEach { (recipientId, config) ->
+            val configData = JsonObject()
+            config.forEach { (key, value) -> configData.put(key, value) }
+            recipientsListData.put(recipientId.toString(), configData)
+        }
+        json.put("recipients", recipientsListData)
+
+        return json
+    }
+
+    override val type = getType()
 
     companion object : EventCreator<CampaignCreatedEvent>() {
         override fun fromJson(obj: JsonObject, createdAt: LocalDateTime): CampaignCreatedEvent {
@@ -49,30 +74,4 @@ class CampaignCreatedEvent(
             return "CampaignCreatedEvent"
         }
     }
-
-    override fun toJson(): JsonObject {
-        val json = JsonObject()
-
-        json.put("id", id.toString())
-        json.put("title", title)
-        json.put("templateId", templateTypeId.toString())
-
-        val typeConfig = JsonObject()
-        templateTypeConfig.forEach { (key, value) ->
-            typeConfig.put(key, value)
-        }
-        json.put("templateConfig", typeConfig)
-
-        val recipientsListData = JsonObject()
-        recipientLists.forEach { (recipientId, config) ->
-            val configData = JsonObject()
-            config.forEach { (key, value) -> configData.put(key, value) }
-            recipientsListData.put(recipientId.toString(), configData)
-        }
-        json.put("recipients", recipientsListData)
-
-        return json
-    }
-
-    override val type = getType()
 }
