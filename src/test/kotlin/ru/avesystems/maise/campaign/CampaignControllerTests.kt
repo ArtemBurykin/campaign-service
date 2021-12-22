@@ -13,13 +13,46 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import com.rabbitmq.client.DeliverCallback
 import com.rabbitmq.client.Delivery
-import io.reactivex.subjects.AsyncSubject
 import org.hamcrest.CoreMatchers.equalTo
+import org.junit.After
+import org.junit.BeforeClass
 import org.skyscreamer.jsonassert.JSONAssert
 
 class CampaignControllerTests {
-
     private val resourceUrl = "http://0.0.0.0:90/campaigns"
+
+    companion object {
+        private val messages = mutableListOf<String>()
+        private const val queueName = "campaign_msgs"
+
+        @BeforeClass @JvmStatic
+        fun setup() {
+            val factory = ConnectionFactory()
+            factory.port = 5670
+            val connection = factory.newConnection()
+            val channel = connection.createChannel()
+            channel.queueDeclare(queueName, false, false, false, null)
+
+            val deliverCallback = DeliverCallback { _: String?, delivery: Delivery ->
+                messages.add(String(delivery.body, StandardCharsets.UTF_8))
+            }
+
+            val cancelCallback = CancelCallback { }
+
+            channel.basicConsume(queueName, true, deliverCallback, cancelCallback)
+        }
+    }
+
+    @After
+    fun teardown() {
+        val factory = ConnectionFactory()
+        factory.port = 5670
+
+        val connection = factory.newConnection()
+        val channel = connection.createChannel()
+        channel.queuePurge(queueName)
+        messages.clear()
+    }
 
     @Test
     fun createAndGetCampaignFromList() {
@@ -156,11 +189,6 @@ class CampaignControllerTests {
 
         val createJson = jsonBody.toString()
 
-        val factory = ConnectionFactory()
-        factory.port = 5670
-        val connection = factory.newConnection()
-        val channel = connection.createChannel()
-
         val response = Given {
             request().header("ContentType", "application/json").and().body(createJson)
         } When {
@@ -168,21 +196,6 @@ class CampaignControllerTests {
         } Then {
             statusCode(201)
         }
-
-        val messageSbj = AsyncSubject.create<String>()
-
-        val queueName = "campaign_msgs"
-
-        channel.queueDeclare(queueName, false, false, false, null)
-
-        val deliverCallback = DeliverCallback { _: String?, delivery: Delivery ->
-            messageSbj.onNext(String(delivery.body, StandardCharsets.UTF_8))
-            messageSbj.onComplete()
-        }
-
-        val cancelCallback = CancelCallback { }
-
-        channel.basicConsume(queueName, true, deliverCallback, cancelCallback)
 
         val createdId = response.extract().body().jsonPath().getString("id")
 
@@ -194,7 +207,7 @@ class CampaignControllerTests {
         event.put("templateConfig", templateConfig)
         event.put("recipients", recipientList)
 
-        val messageObj = JSONObject(messageSbj.value)
+        val messageObj = JSONObject(messages.last())
         JSONAssert.assertEquals(event, messageObj, false)
     }
 
@@ -276,6 +289,58 @@ class CampaignControllerTests {
         assertEquals(CampaignState.Sending.toString(), state2)
     }
 
+    @Test
+    fun startingNonExistentCampaign() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$nonExistentId/start")
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun eventThatCampaignStartedShouldBePublished() {
+        val campaignId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Thread.sleep(100)
+
+        val event = JSONObject()
+        event.put("id", campaignId)
+        event.put("type", "CampaignStartedEvent")
+
+        val messageObj = JSONObject(messages.last())
+        JSONAssert.assertEquals(event, messageObj, false)
+    }
+
+    @Test
+    fun getNonExistentCampaignItem() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        val itemUrl = "$resourceUrl/$nonExistentId"
+
+        Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(404)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
     /**
      * Creates a campaign and returns the id of the campaign.
      */
@@ -302,35 +367,5 @@ class CampaignControllerTests {
         }
 
         return response.extract().body().jsonPath().getString("id")
-    }
-
-    @Test
-    fun startingNonExistentCampaign() {
-        val nonExistentId = UUID.randomUUID().toString()
-
-        Given {
-            request().header("ContentType", "application/json")
-        } When {
-            put("$resourceUrl/$nonExistentId/start")
-        } Then {
-            statusCode(422)
-            body("error", equalTo("The campaign is not found"))
-        }
-    }
-
-    @Test
-    fun getNonExistentCampaignItem() {
-        val nonExistentId = UUID.randomUUID().toString()
-
-        val itemUrl = "$resourceUrl/$nonExistentId"
-
-        Given {
-            request()
-        } When {
-            get(itemUrl)
-        } Then {
-            statusCode(404)
-            body("error", equalTo("The campaign is not found"))
-        }
     }
 }

@@ -39,8 +39,8 @@ class MainVerticle : AbstractVerticle() {
         val options: ConfigRetrieverOptions = ConfigRetrieverOptions().addStore(envStore)
         val retriever: ConfigRetriever = ConfigRetriever.create(vertx, options)
 
-        return retriever.rxGetConfig().flatMapCompletable { ar ->
-            deployVerticles(ar)
+        return retriever.rxGetConfig().flatMapCompletable { config ->
+            deployVerticles(config)
         }
     }
 

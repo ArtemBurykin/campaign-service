@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin ("jvm") version "1.3.71"
+    kotlin("kapt") version "1.3.0"
     application
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("com.google.cloud.tools.jib") version "2.2.0"
@@ -26,6 +27,7 @@ val watchForChange = "src/**/*"
 val doOnChange = "./gradlew classes"
 val launcherClassName = "io.vertx.core.Launcher"
 
+
 application {
     mainClassName = launcherClassName
 }
@@ -37,6 +39,10 @@ dependencies {
     implementation("io.vertx:vertx-pg-client:$vertxVersion")
     implementation("io.vertx:vertx-config:$vertxVersion")
     implementation("io.vertx:vertx-lang-kotlin:$vertxVersion")
+    implementation("io.vertx:vertx-service-proxy:$vertxVersion")
+    kapt ("io.vertx:vertx-codegen:$vertxVersion:processor")
+    compileOnly ("io.vertx:vertx-codegen:$vertxVersion")
+    annotationProcessor("io.vertx:vertx-service-proxy:$vertxVersion")
     implementation("com.rabbitmq:amqp-client:5.9.0")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlin:kotlin-reflect")
