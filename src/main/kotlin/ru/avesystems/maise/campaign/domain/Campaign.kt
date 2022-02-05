@@ -78,20 +78,6 @@ class Campaign() {
         record(event)
     }
 
-    /**
-     * Stops the campaign. I.e pauses it and the rewind it to the start. When the campaign is started again
-     * it will start from the very beginning.
-     */
-    fun stop() {
-        if (state == CampaignState.Initial || state == CampaignState.Stopped) {
-            return
-        }
-
-        val event = CampaignStoppedEvent(id, LocalDateTime.now())
-
-        record(event)
-    }
-
     fun delete() {
         if (state != CampaignState.Initial) {
             return
@@ -106,24 +92,11 @@ class Campaign() {
      * Pauses the campaign. Later it can be resumed from the position where it was paused.
      */
     fun pause() {
-        if (state != CampaignState.Sending) {
-            return
+        if (state == CampaignState.Initial) {
+            throw CampaignNotStartedException("The campaign is not started")
         }
 
         val event = CampaignPausedEvent(id, LocalDateTime.now())
-
-        record(event)
-    }
-
-    /**
-     * Resumes the campaign from the position where it was paused.
-     */
-    fun resume() {
-        if (state != CampaignState.Paused) {
-            return
-        }
-
-        val event = CampaignResumedEvent(id, LocalDateTime.now())
 
         record(event)
     }

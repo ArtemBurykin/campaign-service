@@ -6,3 +6,5 @@ package ru.avesystems.maise.campaign.domain
 class CampaignDeletedException(message: String = "The campaign is deleted"): Exception(message)
 
 class UnknownEventTypeException(message: String = "Unknown event type"): Exception(message)
+
+class CampaignNotStartedException(message: String = "The campaign is not started"): Exception(message)

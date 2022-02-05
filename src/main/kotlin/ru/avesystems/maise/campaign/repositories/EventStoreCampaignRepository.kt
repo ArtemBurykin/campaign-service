@@ -10,6 +10,7 @@ import io.vertx.reactivex.sqlclient.Tuple
 import io.vertx.sqlclient.PoolOptions
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
+import ru.avesystems.maise.campaign.domain.events.CampaignPausedEvent
 import ru.avesystems.maise.campaign.domain.events.CampaignStartedEvent
 import java.util.*
 
@@ -59,6 +60,9 @@ class EventStoreCampaignRepository(
                      }
                      CampaignStartedEvent.getType() -> {
                          CampaignStartedEvent.fromJson(eventData, createdAt)
+                     }
+                     CampaignPausedEvent.getType() -> {
+                         CampaignPausedEvent.fromJson(eventData, createdAt)
                      }
                      else -> {
                          throw Exception("Unknown type of the event")

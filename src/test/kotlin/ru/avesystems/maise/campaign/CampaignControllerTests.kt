@@ -341,6 +341,162 @@ class CampaignControllerTests {
         }
     }
 
+    @Test
+    fun startAndPauseCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        // Pause the campaign
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Paused.toString(), state)
+    }
+
+    @Test
+    fun pauseNotStartedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign is not started"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Initial.toString(), state)
+    }
+
+    @Test
+    fun pausingCampaignTwice() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val itemResponse1 = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val request1Data = itemResponse1.extract().jsonPath()
+
+        val state1 = request1Data.get<String>("state")
+        assertEquals(CampaignState.Paused.toString(), state1)
+    }
+
+    @Test
+    fun pausingNonExistentCampaign() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$nonExistentId/pause")
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun eventThatCampaignPausedShouldBePublished() {
+        val campaignId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Thread.sleep(100)
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Thread.sleep(100)
+
+        val event = JSONObject()
+        event.put("id", campaignId)
+        event.put("type", "CampaignPausedEvent")
+
+        val messageObj = JSONObject(messages.last())
+        JSONAssert.assertEquals(event, messageObj, false)
+    }
+
     /**
      * Creates a campaign and returns the id of the campaign.
      */

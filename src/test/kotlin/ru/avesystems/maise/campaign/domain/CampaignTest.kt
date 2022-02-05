@@ -102,117 +102,6 @@ class CampaignTest {
     }
 
     @Test
-    fun testStart_Stopped_ShouldChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
-        campaign.start()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Sending, campaign.state)
-
-        assertTrue(campaign.events.size == 4)
-
-        assertTrue(campaign.events[3] is CampaignStartedEvent)
-
-        val event = campaign.events[3]
-        assertEquals(campaign.id, event.id)
-    }
-
-    @Test
-    fun testStop_SendingState_ShouldStop() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Stopped, campaign.state)
-
-        assertTrue(campaign.events.size == 3)
-        assertTrue(campaign.events[2] is CampaignStoppedEvent)
-
-        val event = campaign.events[2]
-        assertEquals(campaign.id, event.id)
-    }
-
-    @Test
-    fun testStop_InitialState_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.stop()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Initial, campaign.state)
-    }
-
-    @Test
-    fun testStop_PausedState_ShouldStop() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.pause()
-        campaign.stop()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Stopped, campaign.state)
-
-        assertTrue(campaign.events.size == 4)
-        assertTrue(campaign.events[3] is CampaignStoppedEvent)
-
-        val event = campaign.events[3]
-        assertEquals(campaign.id, event.id)
-    }
-
-    @Test
-    fun testStop_Stopped_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
-        campaign.stop()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Stopped, campaign.state)
-    }
-
-    @Test
     fun testPause_InitialState_ShouldNotChangeState() {
         val createCommand = CreateCampaign(
             title = "some title",
@@ -223,7 +112,11 @@ class CampaignTest {
 
         val campaign = Campaign(createCommand)
 
-        campaign.pause()
+        val exceptionThrown = assertThrows(CampaignNotStartedException::class.java) {
+            campaign.pause()
+        }
+
+        assertEquals("The campaign is not started", exceptionThrown.message)
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Initial, campaign.state)
@@ -255,25 +148,6 @@ class CampaignTest {
     }
 
     @Test
-    fun testPause_StoppedState_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
-        campaign.pause()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Stopped, campaign.state)
-    }
-
-    @Test
     fun testPause_Paused_ShouldNotChangeState() {
         val createCommand = CreateCampaign(
             title = "some title",
@@ -290,86 +164,6 @@ class CampaignTest {
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Paused, campaign.state)
-    }
-
-    @Test
-    fun testResume_InitialState_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.resume()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Initial, campaign.state)
-    }
-
-    @Test
-    fun testResume_SendingState_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.resume()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Sending, campaign.state)
-    }
-
-    @Test
-    fun testResume_Stopped_ShouldNotChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
-        campaign.resume()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Stopped, campaign.state)
-    }
-
-    @Test
-    fun testResume_Paused_ShouldChangeState() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.pause()
-        campaign.resume()
-
-        assertNotEquals(0, campaign.version)
-        assertEquals(CampaignState.Sending, campaign.state)
-
-        assertTrue(campaign.events.size == 4)
-        assertTrue(campaign.events[3] is CampaignResumedEvent)
-
-        val event = campaign.events[3]
-
-        assertEquals(campaign.id, event.id)
     }
 
     @Test
@@ -426,25 +220,6 @@ class CampaignTest {
 
         campaign.start()
         campaign.pause()
-        campaign.delete()
-
-        assertNotEquals(0, campaign.version)
-        assertFalse(campaign.deleted)
-    }
-
-    @Test
-    fun testDelete_StoppedState_ShouldNotMarkAsDeleted() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.stop()
         campaign.delete()
 
         assertNotEquals(0, campaign.version)
