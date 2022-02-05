@@ -41,11 +41,6 @@ class Campaign() {
 
     lateinit var id: UUID; private set
 
-    /**
-     * When the campaign is deleted it's marked as "deleted".
-     */
-    var deleted = false; private set
-
     constructor (cmd: CreateCampaign) : this() {
         val id = UUID.randomUUID()
 
@@ -65,11 +60,7 @@ class Campaign() {
      * Starts the campaign. Launches the mailing (sending emails to users).
      */
     fun start() {
-        if (deleted) {
-            throw CampaignDeletedException()
-        }
-
-        if (state != CampaignState.Initial && state != CampaignState.Stopped) {
+        if (state != CampaignState.Initial) {
             return
         }
 
@@ -78,21 +69,11 @@ class Campaign() {
         record(event)
     }
 
-    fun delete() {
-        if (state != CampaignState.Initial) {
-            return
-        }
-
-        val event = CampaignDeletedEvent(id, LocalDateTime.now())
-
-        record(event)
-    }
-
     /**
      * Pauses the campaign. Later it can be resumed from the position where it was paused.
      */
     fun pause() {
-        if (state == CampaignState.Initial) {
+        if (state  == CampaignState.Initial) {
             throw CampaignNotStartedException("The campaign is not started")
         }
 
@@ -113,29 +94,14 @@ class Campaign() {
         state = CampaignState.Sending
     }
 
-    private fun on(e: CampaignStoppedEvent) {
-        state = CampaignState.Stopped
-    }
-
     private fun on(e: CampaignPausedEvent) {
         state = CampaignState.Paused
-    }
-
-    private fun on(e: CampaignResumedEvent) {
-        state = CampaignState.Sending
-    }
-
-    private fun on(e: CampaignDeletedEvent) {
-        deleted = true
     }
 
     fun apply(e: AbstractDomainEvent) {
         when (e) {
             is CampaignCreatedEvent -> on(e)
-            is CampaignResumedEvent -> on(e)
             is CampaignPausedEvent -> on(e)
-            is CampaignStoppedEvent-> on(e)
-            is CampaignDeletedEvent -> on(e)
             is CampaignStartedEvent -> on(e)
             else -> throw UnknownEventTypeException()
         }

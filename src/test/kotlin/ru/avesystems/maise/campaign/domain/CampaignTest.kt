@@ -102,7 +102,7 @@ class CampaignTest {
     }
 
     @Test
-    fun testPause_InitialState_ShouldNotChangeState() {
+    fun testPause_InitialState_ShouldThrowException() {
         val createCommand = CreateCampaign(
             title = "some title",
             templateTypeId = UUID.randomUUID(),
@@ -164,86 +164,6 @@ class CampaignTest {
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Paused, campaign.state)
-    }
-
-    @Test
-    fun testDelete_InitialState_ShouldMarkAsDeleted() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.delete()
-
-        assertNotEquals(0, campaign.version)
-        assertTrue(campaign.deleted)
-
-        assertTrue(campaign.events.size == 2)
-        assertTrue(campaign.events[1] is CampaignDeletedEvent)
-
-        val event = campaign.events[1]
-        assertEquals(campaign.id, event.id)
-    }
-
-    @Test
-    fun testDelete_SendingState_ShouldNotMarkAsDeleted() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.delete()
-
-        assertNotEquals(0, campaign.version)
-        assertFalse(campaign.deleted)
-    }
-
-    @Test
-    fun testDelete_PausedState_ShouldNotMarkAsDeleted() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.start()
-        campaign.pause()
-        campaign.delete()
-
-        assertNotEquals(0, campaign.version)
-        assertFalse(campaign.deleted)
-    }
-
-    @Test
-    fun testStart_CampaignDeleted_ShouldThrowException() {
-        val createCommand = CreateCampaign(
-            title = "some title",
-            templateTypeId = UUID.randomUUID(),
-            templateTypeConfig = mapOf("item" to "value"),
-            recipientLists = mapOf(UUID.randomUUID() to mapOf<String, Any>("test" to "any"))
-        )
-
-        val campaign = Campaign(createCommand)
-
-        campaign.delete()
-
-        val exceptionThrown = assertThrows(CampaignDeletedException::class.java) {
-            campaign.start()
-        }
-
-        assertEquals("The campaign is deleted", exceptionThrown.message)
     }
 }
 
