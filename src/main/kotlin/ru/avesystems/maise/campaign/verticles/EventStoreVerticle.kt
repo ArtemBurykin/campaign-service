@@ -8,6 +8,7 @@ import ru.avesystems.maise.campaign.codecs.OptionalCampaign
 import ru.avesystems.maise.campaign.repositories.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
+import ru.avesystems.maise.campaign.repositories.PgConnection
 import java.util.*
 
 /**
@@ -23,7 +24,9 @@ class EventStoreVerticle: AbstractVerticle() {
         val dbUser = config().getString("POSTGRES_USER")
         val dbPwd = config().getString("POSTGRES_PASSWORD")
         val dbHost = config().getString("POSTGRES_HOST")
-        eventStoreCampaignRepository = EventStoreCampaignRepository(vertx, dbName, dbUser, dbPwd, dbHost)
+        val conn = PgConnection(vertx, dbName, dbUser, dbPwd, dbHost)
+        val client = conn.connectToDB()
+        eventStoreCampaignRepository = EventStoreCampaignRepository(client)
 
         eventBus.consumer<Any>("campaigns.events.occur") { writeEventMessage(it) }
 

@@ -240,6 +240,104 @@ class CampaignControllerTests {
     }
 
     @Test
+    fun startPausedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign is already started"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Paused.toString(), state)
+    }
+
+    @Test
+    fun startResumedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign is already started"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
     fun startingCampaignTwice() {
         val createdId = createBasicCampaign()
 
@@ -266,13 +364,13 @@ class CampaignControllerTests {
         val state1 = request1Data.get<String>("state")
         assertEquals(CampaignState.Sending.toString(), state1)
 
-        // Make the second request in order to try request's idempotency
         Given {
             request().header("ContentType", "application/json")
         } When {
             put("$resourceUrl/$createdId/start")
         } Then {
-            statusCode(204)
+            statusCode(409)
+            body("error", equalTo("The campaign is already started"))
         }
 
         val itemResponse2 = Given {
@@ -408,6 +506,58 @@ class CampaignControllerTests {
     }
 
     @Test
+    fun pauseResumedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Paused.toString(), state)
+    }
+
+    @Test
     fun pausingCampaignTwice() {
         val createdId = createBasicCampaign()
 
@@ -432,7 +582,8 @@ class CampaignControllerTests {
         } When {
             put("$resourceUrl/$createdId/pause")
         } Then {
-            statusCode(204)
+            statusCode(409)
+            body("error", equalTo("The campaign already paused"))
         }
 
         val itemUrl = "$resourceUrl/$createdId"
@@ -495,6 +646,222 @@ class CampaignControllerTests {
 
         val messageObj = JSONObject(messages.last())
         JSONAssert.assertEquals(event, messageObj, false)
+    }
+
+    @Test
+    fun pauseAndResumeCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun resumeCampaignTwice() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign cannot be resumed"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun resumeNotPausedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign cannot be resumed"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun resumeNotStartedCampaign() {
+        val createdId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(409)
+            body("error", equalTo("The campaign cannot be resumed"))
+        }
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignResponse = getResponse.extract().jsonPath()
+
+        val state = campaignResponse.get<String>("state")
+        assertEquals(CampaignState.Initial.toString(), state)
+    }
+
+    @Test
+    fun resumeNotExistingCampaign() {
+        val nonExistentId = UUID.randomUUID().toString()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$nonExistentId/resume")
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun eventThatCampaignResumedShouldBePublished() {
+        val campaignId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$campaignId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        Thread.sleep(100)
+
+        val event = JSONObject()
+        event.put("id", campaignId)
+        event.put("type", "CampaignResumedEvent")
+
+        val messageObj = JSONObject(messages.last())
+        JSONAssert.assertEquals(event, messageObj, false)
+
     }
 
     /**

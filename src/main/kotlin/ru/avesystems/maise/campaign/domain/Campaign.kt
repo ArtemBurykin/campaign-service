@@ -61,7 +61,7 @@ class Campaign() {
      */
     fun start() {
         if (state != CampaignState.Initial) {
-            return
+            throw CampaignAlreadyStartedException()
         }
 
         val event = CampaignStartedEvent(id, LocalDateTime.now())
@@ -75,10 +75,24 @@ class Campaign() {
     fun pause() {
         if (state  == CampaignState.Initial) {
             throw CampaignNotStartedException("The campaign is not started")
+        } else if (state == CampaignState.Paused) {
+            throw CampaignAlreadyPausedException()
         }
 
         val event = CampaignPausedEvent(id, LocalDateTime.now())
 
+        record(event)
+    }
+
+    /**
+     * Resumes the campaign after it was paused.
+     */
+    fun resume() {
+        if (state != CampaignState.Paused) {
+            throw CampaignCannotBeResumedException()
+        }
+
+        val event = CampaignResumedEvent(id, LocalDateTime.now())
         record(event)
     }
 
@@ -98,11 +112,16 @@ class Campaign() {
         state = CampaignState.Paused
     }
 
+    private fun on(e: CampaignResumedEvent) {
+        state = CampaignState.Sending
+    }
+
     fun apply(e: AbstractDomainEvent) {
         when (e) {
             is CampaignCreatedEvent -> on(e)
             is CampaignPausedEvent -> on(e)
             is CampaignStartedEvent -> on(e)
+            is CampaignResumedEvent -> on(e)
             else -> throw UnknownEventTypeException()
         }
 
@@ -114,4 +133,5 @@ class Campaign() {
         apply(e)
         events.add(e)
     }
+
 }

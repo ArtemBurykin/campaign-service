@@ -3,13 +3,10 @@ package ru.avesystems.maise.campaign.handlers
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
 import ru.avesystems.maise.campaign.codecs.OptionalCampaign
-import ru.avesystems.maise.campaign.domain.CampaignAlreadyStartedException
+import ru.avesystems.maise.campaign.domain.CampaignCannotBeResumedException
 import ru.avesystems.maise.campaign.models.ErrorResponse
 
-/**
- * The handler to start a campaign
- */
-class StartCampaignHandler {
+class ResumeCampaignHandler {
     companion object {
         fun getClient(vertx: Vertx): (context: RoutingContext) -> Unit {
             return { context ->
@@ -31,9 +28,10 @@ class StartCampaignHandler {
                     }
 
                     try {
-                        campaign.start()
-                    } catch (e: CampaignAlreadyStartedException) {
-                        val error = ErrorResponse("The campaign is already started")
+                        campaign.resume()
+                    } catch(e: CampaignCannotBeResumedException) {
+                        val error = ErrorResponse("The campaign cannot be resumed")
+
                         context.response()
                             .putHeader("content-type", "application/json")
                             .setStatusCode(409).end(error.toJson().toString())
@@ -41,9 +39,18 @@ class StartCampaignHandler {
                         return@subscribe
                     }
 
-                    val campaignStartedEvent = campaign.events.last()
+                    // if there is no new events added, it means the campaign's already resumed
+                    if (campaign.events.count() == 0) {
+                        context.response()
+                            .putHeader("content-type", "application/json")
+                            .setStatusCode(204).end()
 
-                    eventBus.publish("campaigns.events.occur", campaignStartedEvent)
+                        return@subscribe
+                    }
+
+                    val campaignResumedEvent = campaign.events.last()
+
+                    eventBus.publish("campaigns.events.occur", campaignResumedEvent)
 
                     context.response()
                         .putHeader("content-type", "application/json")
@@ -52,4 +59,5 @@ class StartCampaignHandler {
             }
         }
     }
+
 }

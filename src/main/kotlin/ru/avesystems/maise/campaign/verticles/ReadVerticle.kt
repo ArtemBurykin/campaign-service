@@ -7,6 +7,7 @@ import ru.avesystems.maise.campaign.codecs.CampaignItemsHolder
 import ru.avesystems.maise.campaign.repositories.CampaignReadRepository
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import ru.avesystems.maise.campaign.models.CampaignListItem
+import ru.avesystems.maise.campaign.repositories.PgConnection
 import java.util.*
 
 /**
@@ -22,7 +23,9 @@ class ReadVerticle : AbstractVerticle() {
         val dbUser = config().getString("POSTGRES_USER")
         val dbPwd = config().getString("POSTGRES_PASSWORD")
         val dbHost = config().getString("POSTGRES_HOST")
-        readRepository = CampaignReadRepository(vertx, dbName, dbUser, dbPwd, dbHost)
+        val dbConn = PgConnection(vertx, dbName, dbUser, dbPwd, dbHost)
+        val client = dbConn.connectToDB()
+        readRepository = CampaignReadRepository(client)
 
         eventBus.consumer<Any>("campaigns.read.getAll") { message ->
             getAllCampaigns().subscribe { campaigns ->

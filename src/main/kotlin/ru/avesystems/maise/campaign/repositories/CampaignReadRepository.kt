@@ -14,17 +14,12 @@ import ru.avesystems.maise.campaign.models.CampaignListItem
  * the campaign_list table.
  */
 class CampaignReadRepository(
-    private val vertx: Vertx,
-    private val dbName: String,
-    private val dbUser: String,
-    private val dbPwd: String,
-    private val dbHost: String
+    private val client: PgPool
 ) {
     /**
      * Retrieves the list of campaigns.
      */
     fun retrieveList(): Single<List<CampaignListItem>> {
-        val client = connectToDB()
         val result = client.query("SELECT * FROM campaign_list").rxExecute()
 
         return result.flatMap { rows ->
@@ -38,7 +33,6 @@ class CampaignReadRepository(
      * Creates a representation of the campaign in the table.
      */
     fun create(campaignData: CampaignListItem): Completable {
-        val client = connectToDB()
         val id = campaignData.id
         val title = campaignData.title
 
@@ -46,18 +40,5 @@ class CampaignReadRepository(
             .rxExecute(Tuple.of(id, title)).flatMapCompletable {
                 Completable.never()
             }
-    }
-
-    private fun connectToDB(): PgPool {
-        val connectOptions = PgConnectOptions()
-            .setHost(dbHost)
-            .setDatabase(dbName)
-            .setUser(dbUser)
-            .setPassword(dbPwd)
-
-        val poolOptions = PoolOptions()
-            .setMaxSize(5)
-
-        return PgPool.pool(vertx, connectOptions, poolOptions)
     }
 }

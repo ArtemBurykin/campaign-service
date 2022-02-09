@@ -14,6 +14,7 @@ import io.vertx.reactivex.ext.web.handler.BodyHandler
 import ru.avesystems.maise.campaign.codecs.*
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
 import ru.avesystems.maise.campaign.domain.events.CampaignPausedEvent
+import ru.avesystems.maise.campaign.domain.events.CampaignResumedEvent
 import ru.avesystems.maise.campaign.domain.events.CampaignStartedEvent
 import ru.avesystems.maise.campaign.handlers.*
 import ru.avesystems.maise.campaign.models.CampaignListItem
@@ -81,25 +82,23 @@ class MainVerticle : AbstractVerticle() {
      */
     private fun registerObjectCodecs() {
         vertx.eventBus().delegate.registerDefaultCodec(
-            CampaignListItem::class.java, GenericCodec(CampaignListItem::class.java)
-        )
-
-        vertx.eventBus().delegate.registerDefaultCodec(
             CampaignCreatedEvent::class.java, GenericCodec(CampaignCreatedEvent::class.java)
         )
-
         vertx.eventBus().delegate.registerDefaultCodec(
             CampaignStartedEvent::class.java, GenericCodec(CampaignStartedEvent::class.java)
         )
-
         vertx.eventBus().delegate.registerDefaultCodec(
             CampaignPausedEvent::class.java, GenericCodec(CampaignPausedEvent::class.java)
         )
-
+        vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignListItem::class.java, GenericCodec(CampaignListItem::class.java)
+        )
+        vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignResumedEvent::class.java, GenericCodec(CampaignResumedEvent::class.java)
+        )
         vertx.eventBus().delegate.registerDefaultCodec(
             CampaignItemsHolder::class.java, CampaignListItemsCodec()
         )
-
         vertx.eventBus().delegate.registerDefaultCodec(
             OptionalCampaign::class.java, OptionalCampaignCodec()
         )
@@ -114,6 +113,7 @@ class MainVerticle : AbstractVerticle() {
 
         router.put("/campaigns/:id/start").handler(StartCampaignHandler.getClient(vertx))
         router.put("/campaigns/:id/pause").handler(PauseCampaignHandler.getClient(vertx))
+        router.put("/campaigns/:id/resume").handler(ResumeCampaignHandler.getClient(vertx))
 
         router.post("/campaigns")
             .handler(BodyHandler.create())

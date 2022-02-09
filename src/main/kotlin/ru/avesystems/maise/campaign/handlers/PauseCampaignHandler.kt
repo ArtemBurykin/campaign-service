@@ -3,6 +3,7 @@ package ru.avesystems.maise.campaign.handlers
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
 import ru.avesystems.maise.campaign.codecs.OptionalCampaign
+import ru.avesystems.maise.campaign.domain.CampaignAlreadyPausedException
 import ru.avesystems.maise.campaign.domain.CampaignNotStartedException
 import ru.avesystems.maise.campaign.models.ErrorResponse
 
@@ -18,30 +19,17 @@ class PauseCampaignHandler {
                     val campaign = campaignHolder.campaign
 
                     if (campaign == null) {
-                        val error = ErrorResponse("The campaign is not found")
-
-                        context.response()
-                            .putHeader("content-type", "application/json")
-                            .setStatusCode(422).end(error.toJson().toString())
-
+                        responseWithError(context, "The campaign is not found", 422)
                         return@subscribe
                     }
 
                     try {
                         campaign.pause()
                     } catch (e: CampaignNotStartedException) {
-                        val error = ErrorResponse("The campaign is not started")
-                        context.response()
-                            .putHeader("content-type", "application/json")
-                            .setStatusCode(409).end(error.toJson().toString())
-                    }
-
-                    // if there is no new events added, it means the campaign's already paused
-                    if (campaign.events.count() == 0) {
-                        context.response()
-                            .putHeader("content-type", "application/json")
-                            .setStatusCode(204).end()
-
+                        responseWithError(context, "The campaign is not started", 409)
+                        return@subscribe
+                    } catch (e: CampaignAlreadyPausedException) {
+                        responseWithError(context, "The campaign already paused", 409)
                         return@subscribe
                     }
 
@@ -54,6 +42,17 @@ class PauseCampaignHandler {
                         .setStatusCode(204).end()
                 }
             }
+        }
+
+        /**
+         * Creates a response with the error
+         */
+        private fun responseWithError(context: RoutingContext, errMessage: String, code: Int) {
+            val error = ErrorResponse(errMessage)
+
+            context.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(code).end(error.toJson().toString())
         }
     }
 
