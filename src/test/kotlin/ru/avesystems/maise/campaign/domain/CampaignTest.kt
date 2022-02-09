@@ -65,7 +65,7 @@ class CampaignTest {
     }
 
     @Test
-    fun testStart_SendingState_ShouldNotChangeState() {
+    fun testStart_SendingState_ShouldThrowException() {
         val createCommand = CreateCampaign(
             title = "some title",
             templateTypeId = UUID.randomUUID(),
@@ -76,14 +76,17 @@ class CampaignTest {
         val campaign = Campaign(createCommand)
 
         campaign.start()
-        campaign.start()
+        val exceptionThrown = assertThrows(CampaignAlreadyStartedException::class.java) {
+            campaign.start()
+        }
+        assertEquals("The campaign is already started", exceptionThrown.message)
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Sending, campaign.state)
     }
 
     @Test
-    fun testStart_Paused_ShouldNotChangeState() {
+    fun testStart_Paused_ShouldThrowException() {
         val createCommand = CreateCampaign(
             title = "some title",
             templateTypeId = UUID.randomUUID(),
@@ -95,7 +98,10 @@ class CampaignTest {
 
         campaign.start()
         campaign.pause()
-        campaign.start()
+        val exceptionThrown = assertThrows(CampaignAlreadyStartedException::class.java) {
+            campaign.start()
+        }
+        assertEquals("The campaign is already started", exceptionThrown.message)
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Paused, campaign.state)
@@ -160,7 +166,10 @@ class CampaignTest {
 
         campaign.start()
         campaign.pause()
-        campaign.pause()
+        val exceptionThrown = assertThrows(CampaignAlreadyPausedException::class.java) {
+            campaign.pause()
+        }
+        assertEquals("The campaign already paused", exceptionThrown.message)
 
         assertNotEquals(0, campaign.version)
         assertEquals(CampaignState.Paused, campaign.state)
