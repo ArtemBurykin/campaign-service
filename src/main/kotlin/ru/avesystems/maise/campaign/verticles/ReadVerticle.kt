@@ -6,6 +6,7 @@ import io.vertx.reactivex.core.AbstractVerticle
 import ru.avesystems.maise.campaign.codecs.CampaignItemsHolder
 import ru.avesystems.maise.campaign.repositories.CampaignReadRepository
 import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
+import ru.avesystems.maise.campaign.domain.events.CampaignDeletedEvent
 import ru.avesystems.maise.campaign.models.CampaignListItem
 import ru.avesystems.maise.campaign.repositories.PgConnection
 import java.util.*
@@ -39,6 +40,10 @@ class ReadVerticle : AbstractVerticle() {
 
             if (event is CampaignCreatedEvent) {
                 createCampaign(event.id, event.title).subscribe {
+                    message.reply("")
+                }
+            } else if (event is CampaignDeletedEvent) {
+                readRepository.remove(event.id).subscribe {
                     message.reply("")
                 }
             }

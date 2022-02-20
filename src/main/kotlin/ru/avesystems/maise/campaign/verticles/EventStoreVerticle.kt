@@ -7,6 +7,7 @@ import io.vertx.reactivex.core.eventbus.Message
 import ru.avesystems.maise.campaign.codecs.OptionalCampaign
 import ru.avesystems.maise.campaign.repositories.EventStoreCampaignRepository
 import ru.avesystems.maise.campaign.domain.Campaign
+import ru.avesystems.maise.campaign.domain.CampaignState
 import ru.avesystems.maise.campaign.domain.events.AbstractDomainEvent
 import ru.avesystems.maise.campaign.repositories.PgConnection
 import java.util.*
@@ -69,6 +70,10 @@ class EventStoreVerticle: AbstractVerticle() {
             val campaign = Campaign()
             events.forEach {
                 campaign.apply(it)
+            }
+
+            if (campaign.state == CampaignState.Deleted) {
+                return@flatMap Single.just(Optional.empty<Campaign>())
             }
 
             val campaignDataSingle = Single.just(Optional.of(campaign))

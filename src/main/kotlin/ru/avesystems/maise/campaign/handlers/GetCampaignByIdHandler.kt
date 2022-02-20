@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
 import ru.avesystems.maise.campaign.codecs.OptionalCampaign
+import ru.avesystems.maise.campaign.domain.CampaignState
 import ru.avesystems.maise.campaign.models.ErrorResponse
 
 /**

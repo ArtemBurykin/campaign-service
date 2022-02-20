@@ -12,10 +12,7 @@ import io.vertx.reactivex.ext.web.Router
 import io.vertx.reactivex.ext.web.RoutingContext
 import io.vertx.reactivex.ext.web.handler.BodyHandler
 import ru.avesystems.maise.campaign.codecs.*
-import ru.avesystems.maise.campaign.domain.events.CampaignCreatedEvent
-import ru.avesystems.maise.campaign.domain.events.CampaignPausedEvent
-import ru.avesystems.maise.campaign.domain.events.CampaignResumedEvent
-import ru.avesystems.maise.campaign.domain.events.CampaignStartedEvent
+import ru.avesystems.maise.campaign.domain.events.*
 import ru.avesystems.maise.campaign.handlers.*
 import ru.avesystems.maise.campaign.models.CampaignListItem
 
@@ -94,6 +91,9 @@ class MainVerticle : AbstractVerticle() {
             CampaignListItem::class.java, GenericCodec(CampaignListItem::class.java)
         )
         vertx.eventBus().delegate.registerDefaultCodec(
+            CampaignDeletedEvent::class.java, GenericCodec(CampaignDeletedEvent::class.java)
+        )
+        vertx.eventBus().delegate.registerDefaultCodec(
             CampaignResumedEvent::class.java, GenericCodec(CampaignResumedEvent::class.java)
         )
         vertx.eventBus().delegate.registerDefaultCodec(
@@ -114,6 +114,8 @@ class MainVerticle : AbstractVerticle() {
         router.put("/campaigns/:id/start").handler(StartCampaignHandler.getClient(vertx))
         router.put("/campaigns/:id/pause").handler(PauseCampaignHandler.getClient(vertx))
         router.put("/campaigns/:id/resume").handler(ResumeCampaignHandler.getClient(vertx))
+
+        router.delete("/campaigns/:id").handler(DeleteCampaignHandler.getClient(vertx))
 
         router.post("/campaigns")
             .handler(BodyHandler.create())

@@ -55,7 +55,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun createAndGetCampaignFromList() {
+    fun `create - get list`() {
         val templateTypeId = UUID.randomUUID().toString()
 
         val typeConfig = JSONObject()
@@ -104,7 +104,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun createAndGetCampaignItem() {
+    fun `create - get item`() {
         val templateTypeId = UUID.randomUUID().toString()
 
         val templateConfig = JSONObject()
@@ -167,7 +167,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun createAndCheckThatEventSent() {
+    fun `create - event should be sent`() {
         val templateTypeId = UUID.randomUUID().toString()
 
         val templateConfig = JSONObject()
@@ -197,6 +197,8 @@ class CampaignControllerTests {
             statusCode(201)
         }
 
+        Thread.sleep(100) // waiting till the event is populated
+
         val createdId = response.extract().body().jsonPath().getString("id")
 
         val event = JSONObject()
@@ -212,7 +214,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun createAndStartCampaign() {
+    fun `start - should start campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -240,7 +242,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun startPausedCampaign() {
+    fun `start - paused campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -285,7 +287,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun startResumedCampaign() {
+    fun `start - resumed campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -338,7 +340,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun startingCampaignTwice() {
+    fun `start - twice`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -388,7 +390,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun startingNonExistentCampaign() {
+    fun `start - campaign does not exist`() {
         val nonExistentId = UUID.randomUUID().toString()
 
         Given {
@@ -402,7 +404,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun eventThatCampaignStartedShouldBePublished() {
+    fun `start - should send the event`() {
         val campaignId = createBasicCampaign()
 
         Given {
@@ -424,7 +426,31 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun getNonExistentCampaignItem() {
+    fun `start - deleted campaign`() {
+        val createdId = createBasicCampaign()
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun `getItem - does not exist`() {
         val nonExistentId = UUID.randomUUID().toString()
 
         val itemUrl = "$resourceUrl/$nonExistentId"
@@ -440,7 +466,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun startAndPauseCampaign() {
+    fun `pause - started campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -477,7 +503,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun pauseNotStartedCampaign() {
+    fun `pause - not started campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -506,7 +532,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun pauseResumedCampaign() {
+    fun `pause - campaign resumed`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -558,7 +584,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun pausingCampaignTwice() {
+    fun `pause - twice`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -603,7 +629,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun pausingNonExistentCampaign() {
+    fun `pause - campaign does not exist`() {
         val nonExistentId = UUID.randomUUID().toString()
 
         Given {
@@ -617,7 +643,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun eventThatCampaignPausedShouldBePublished() {
+    fun `pause - event should be sent`() {
         val campaignId = createBasicCampaign()
 
         Given {
@@ -649,7 +675,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun pauseAndResumeCampaign() {
+    fun `resume - paused campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -693,7 +719,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun resumeCampaignTwice() {
+    fun `resume - twice`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -746,7 +772,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun resumeNotPausedCampaign() {
+    fun `resume - not paused campaign`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -783,7 +809,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun resumeNotStartedCampaign() {
+    fun `resume - not started`() {
         val createdId = createBasicCampaign()
 
         Given {
@@ -812,7 +838,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun resumeNotExistingCampaign() {
+    fun `resume - campaign does not exist`() {
         val nonExistentId = UUID.randomUUID().toString()
 
         Given {
@@ -826,7 +852,7 @@ class CampaignControllerTests {
     }
 
     @Test
-    fun eventThatCampaignResumedShouldBePublished() {
+    fun `resume - should send the event`() {
         val campaignId = createBasicCampaign()
 
         Given {
@@ -861,7 +887,228 @@ class CampaignControllerTests {
 
         val messageObj = JSONObject(messages.last())
         JSONAssert.assertEquals(event, messageObj, false)
+    }
 
+    @Test
+    fun `delete - successful - created campaign` () {
+        val createdId = createBasicCampaign()
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(404)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun `delete - fail - started campaign` () {
+        val createdId = createBasicCampaign()
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(422)
+            body("error", equalTo("You cannot delete a started campaign"))
+        }
+
+        val itemResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val responseData = itemResponse.extract().jsonPath()
+
+        val state = responseData.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun `delete - fail - paused campaign` () {
+        val createdId = createBasicCampaign()
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(422)
+            body("error", equalTo("You cannot delete a started campaign"))
+        }
+
+        val itemResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val responseData = itemResponse.extract().jsonPath()
+
+        val state = responseData.get<String>("state")
+        assertEquals(CampaignState.Paused.toString(), state)
+    }
+
+    @Test
+    fun `delete - fail - resumed campaign` () {
+        val createdId = createBasicCampaign()
+
+        val itemUrl = "$resourceUrl/$createdId"
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/start")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/pause")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            put("$resourceUrl/$createdId/resume")
+        } Then {
+            statusCode(204)
+        }
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(422)
+            body("error", equalTo("You cannot delete a started campaign"))
+        }
+
+        val itemResponse = Given {
+            request()
+        } When {
+            get(itemUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val responseData = itemResponse.extract().jsonPath()
+
+        val state = responseData.get<String>("state")
+        assertEquals(CampaignState.Sending.toString(), state)
+    }
+
+    @Test
+    fun `delete - fail - non existent campaign` () {
+        val nonExistentId = UUID.randomUUID().toString()
+        val itemUrl = "$resourceUrl/$nonExistentId"
+
+        Given {
+            request()
+        } When {
+            delete(itemUrl)
+        } Then {
+            statusCode(422)
+            body("error", equalTo("The campaign is not found"))
+        }
+    }
+
+    @Test
+    fun `delete - the event should be sent` () {
+        val campaignId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            delete("$resourceUrl/$campaignId")
+        } Then {
+            statusCode(204)
+        }
+
+        Thread.sleep(100)
+
+        val event = JSONObject()
+        event.put("id", campaignId)
+        event.put("type", "CampaignDeletedEvent")
+
+        val messageObj = JSONObject(messages.last())
+        JSONAssert.assertEquals(event, messageObj, false)
+    }
+
+    @Test
+    fun `delete - should not find during retrieving of the list`() {
+        val campaignId = createBasicCampaign()
+
+        Given {
+            request().header("ContentType", "application/json")
+        } When {
+            delete("$resourceUrl/$campaignId")
+        } Then {
+            statusCode(204)
+        }
+
+        val getResponse = Given {
+            request()
+        } When {
+            get(resourceUrl)
+        } Then {
+            statusCode(200)
+        }
+
+        val campaignsResponse = getResponse.extract().jsonPath()
+
+        val campaignIds = campaignsResponse.getList<String>("id")
+        assertFalse(campaignIds.contains(campaignId))
     }
 
     /**

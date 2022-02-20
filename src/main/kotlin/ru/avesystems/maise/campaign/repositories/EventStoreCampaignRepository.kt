@@ -54,6 +54,9 @@ class EventStoreCampaignRepository(
                      CampaignResumedEvent.getType() -> {
                          CampaignResumedEvent.fromJson(eventData, createdAt)
                      }
+                     CampaignDeletedEvent.getType() -> {
+                         CampaignDeletedEvent.fromJson(eventData, createdAt)
+                     }
                      else -> {
                          throw Exception("Unknown type of the event")
                      }

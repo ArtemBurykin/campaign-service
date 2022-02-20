@@ -96,6 +96,14 @@ class Campaign() {
         record(event)
     }
 
+    fun delete() {
+        if (state != CampaignState.Initial) {
+            throw AlreadyStartedCampaignCannotBeDeletedException()
+        }
+        val event = CampaignDeletedEvent(id, LocalDateTime.now())
+        record(event)
+    }
+
     private fun on(e: CampaignCreatedEvent) {
         id = e.id
         title = e.title
@@ -116,12 +124,17 @@ class Campaign() {
         state = CampaignState.Sending
     }
 
+    private fun on(e: CampaignDeletedEvent) {
+        state = CampaignState.Deleted
+    }
+
     fun apply(e: AbstractDomainEvent) {
         when (e) {
             is CampaignCreatedEvent -> on(e)
             is CampaignPausedEvent -> on(e)
             is CampaignStartedEvent -> on(e)
             is CampaignResumedEvent -> on(e)
+            is CampaignDeletedEvent -> on(e)
             else -> throw UnknownEventTypeException()
         }
 
@@ -133,5 +146,4 @@ class Campaign() {
         apply(e)
         events.add(e)
     }
-
 }

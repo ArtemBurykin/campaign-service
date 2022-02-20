@@ -3,10 +3,10 @@ package ru.avesystems.maise.campaign.handlers
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
 import ru.avesystems.maise.campaign.codecs.OptionalCampaign
-import ru.avesystems.maise.campaign.domain.CampaignCannotBeResumedException
+import ru.avesystems.maise.campaign.domain.AlreadyStartedCampaignCannotBeDeletedException
 import ru.avesystems.maise.campaign.models.ErrorResponse
 
-class ResumeCampaignHandler {
+class DeleteCampaignHandler {
     companion object {
         fun getClient(vertx: Vertx): (context: RoutingContext) -> Unit {
             return { context ->
@@ -28,20 +28,19 @@ class ResumeCampaignHandler {
                     }
 
                     try {
-                        campaign.resume()
-                    } catch(e: CampaignCannotBeResumedException) {
-                        val error = ErrorResponse("The campaign cannot be resumed")
+                        campaign.delete()
+                    } catch (e: AlreadyStartedCampaignCannotBeDeletedException) {
+                        val error = ErrorResponse("You cannot delete a started campaign")
 
                         context.response()
                             .putHeader("content-type", "application/json")
-                            .setStatusCode(409).end(error.toJson().toString())
+                            .setStatusCode(422).end(error.toJson().toString())
 
                         return@subscribe
                     }
 
-                    val campaignResumedEvent = campaign.events.last()
-
-                    eventBus.publish("campaigns.events.occur", campaignResumedEvent)
+                    val campaignDeletedEvent = campaign.events.last()
+                    eventBus.publish("campaigns.events.occur", campaignDeletedEvent)
 
                     context.response()
                         .putHeader("content-type", "application/json")
@@ -50,5 +49,4 @@ class ResumeCampaignHandler {
             }
         }
     }
-
 }
